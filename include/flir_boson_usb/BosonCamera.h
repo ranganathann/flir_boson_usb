@@ -23,6 +23,7 @@
 
 // C++ Includes
 #include <string>
+#include <memory>
 
 // Linux system includes
 #include <fcntl.h>
@@ -38,14 +39,14 @@
 #include <opencv2/opencv.hpp>
 
 // ROS Includes
-#include <ros/ros.h>
-#include <nodelet/nodelet.h>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
 #include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.h>
-#include <camera_info_manager/camera_info_manager.h>
+#include <image_transport/image_transport.hpp>
+#include <camera_info_manager/camera_info_manager.hpp>
 
-#include <sensor_msgs/CameraInfo.h>
-#include <sensor_msgs/Image.h>
+#include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/image.hpp>
 
 namespace flir_boson_usb
 {
@@ -62,48 +63,45 @@ enum SensorTypes
   Boson640
 };
 
-class BosonCamera : public nodelet::Nodelet
+class BosonCamera : public rclcpp::Node
 {
   public:
-    BosonCamera();
-    ~BosonCamera();
+    explicit BosonCamera(const rclcpp::NodeOptions & options);
+    virtual ~BosonCamera();
 
   private:
-    virtual void onInit();
     void agcBasicLinear(const cv::Mat& input_16,
-                        cv::Mat* output_8,
-                        const int& height,
-                        const int& width);
+                      cv::Mat* output_8,
+                      const int& height,
+                      const int& width);
     bool openCamera();
     bool closeCamera();
-    void captureAndPublish(const ros::TimerEvent& evt);
+    void captureAndPublish();
 
-    ros::NodeHandle nh, pnh;
-    std::shared_ptr<camera_info_manager::CameraInfoManager> camera_info;
-    std::shared_ptr<image_transport::ImageTransport> it;
-    image_transport::CameraPublisher image_pub;
-    cv_bridge::CvImage cv_img;
-    sensor_msgs::ImagePtr pub_image;
-    ros::Timer capture_timer;
-    int32_t width, height;
-    int32_t fd;
-    int32_t i;
-    struct v4l2_capability cap;
-    int32_t frame = 0;                // First frame number enumeration
-    int8_t thermal_sensor_name[20];  // To store the sensor name
-    struct v4l2_buffer bufferinfo;
-    void* buffer_start;
+    std::shared_ptr<camera_info_manager::CameraInfoManager> camera_info_;
+    std::shared_ptr<image_transport::ImageTransport> it_;
+    image_transport::CameraPublisher image_pub_;
+    cv_bridge::CvImage cv_img_;
+    rclcpp::TimerBase::SharedPtr capture_timer_;
+    int32_t width_, height_;
+    int32_t fd_;
+    int32_t i_;
+    struct v4l2_capability cap_;
+    int32_t frame_ = 0;                // First frame number enumeration
+    int8_t thermal_sensor_name_[20];  // To store the sensor name
+    struct v4l2_buffer bufferinfo_;
+    void* buffer_start_;
 
-    cv::Mat thermal16, thermal16_linear, thermal16_linear_zoom,
-            thermal_rgb_zoom, thermal_luma, thermal_rgb;
+    cv::Mat thermal16_, thermal16_linear_, thermal16_linear_zoom_,
+            thermal_rgb_zoom_, thermal_luma_, thermal_rgb_;
 
     // Default Program options
-    std::string frame_id, dev_path, camera_info_url,
-      video_mode_str, sensor_type_str;
-    float frame_rate;
-    Encoding video_mode;
-    bool zoom_enable;
-    SensorTypes sensor_type;
+    std::string frame_id_, dev_path_, camera_info_url_,
+      video_mode_str_, sensor_type_str_;
+    float frame_rate_;
+    Encoding video_mode_;
+    bool zoom_enable_;
+    SensorTypes sensor_type_;
 };
 
 }  // namespace flir_boson_usb
