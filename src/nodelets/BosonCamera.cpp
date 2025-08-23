@@ -103,9 +103,8 @@ BosonCamera::BosonCamera(const rclcpp::NodeOptions & options)
 
   if (!exit)
   {
-    it_ = std::make_shared<image_transport::ImageTransport>(this->shared_from_this());
-    image_pub_ = it_->advertiseCamera("image_raw", 1);
-
+    // Defer image transport initialization to avoid shared_from_this() issues
+    // The nodelet will be properly managed by the time the timer callback executes
     using namespace std::chrono_literals;
     auto timer_period = std::chrono::duration<double>(1.0 / frame_rate_);
     capture_timer_ = this->create_wall_timer(
@@ -333,6 +332,15 @@ bool BosonCamera::closeCamera()
 
 void BosonCamera::captureAndPublish()
 {
+  // Lazy initialization of image transport to avoid shared_from_this() issues
+  if (!it_)
+  {
+    RCLCPP_INFO(this->get_logger(), "flir_boson_usb - Initializing image transport");
+    it_ = std::make_shared<image_transport::ImageTransport>(this->shared_from_this());
+    image_pub_ = it_->advertiseCamera("image_raw", 1);
+    RCLCPP_INFO(this->get_logger(), "flir_boson_usb - Image transport initialized");
+  }
+
   Size size(640, 512);
 
   auto ci = std::make_shared<sensor_msgs::msg::CameraInfo>(camera_info_->getCameraInfo());

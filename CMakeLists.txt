@@ -65,6 +65,11 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
+install(DIRECTORY
+  example_calibrations
+  DESTINATION share/${PROJECT_NAME}
+)
+
 install(DIRECTORY include/
   DESTINATION include/
 )
